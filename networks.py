@@ -122,16 +122,15 @@ def binary_cifar10_sbn(input, training=True):
 	
 	return input, output
 
-	
 
 def mnist(input, training=True):
 	out = tf.layers.dense(input, 2048, activation=None)
 	out = tf.layers.batch_normalization(out, training=training)
 	out = tf.nn.relu(out)
-	out = tf.layers.dense(out, 2048, activation=None)
+	out = tf.layers.dense(out, 256, activation=None)
 	out = tf.layers.batch_normalization(out, training=training)
 	out = tf.nn.relu(out)
-	out = tf.layers.dense(out, 2048, activation=None)
+	out = tf.layers.dense(out, 256, activation=None)
 	out = tf.layers.batch_normalization(out, training=training)
 	out = tf.nn.relu(out)
 	out = tf.layers.dense(out, 10, activation=None)

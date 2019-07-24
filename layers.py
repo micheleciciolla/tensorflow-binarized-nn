@@ -3,15 +3,15 @@ from tensorflow.python.framework import ops
 
 
 def binarize(x):
+
 	# we also have to reassign the sign gradient otherwise it will be almost everywhere equal to zero
 	# using the straight through estimator
+
 	with tf.get_default_graph().gradient_override_map({'Sign': 'Identity'}):
-		#return tf.sign(x)				#	<-- wrong sign doesn't return +1 for zero
-		return tf.sign(tf.sign(x)+1e-8) #	<-- this should be ok, ugly but okay
+		return tf.sign(tf.sign(x)+1e-8)
 
-
-	
-def binaryDense(inputs, units, activation=None, use_bias=True, trainable=True, binarize_input=True, name='binarydense', reuse=False):
+# Fully connected binarized Neural Network
+def binaryDense(inputs, units, activation=None, use_bias=False, trainable=True, binarize_input=True, name='binarydense', reuse=False):
 	
 	# flatten the input 
 	flat_input = tf.contrib.layers.flatten(inputs)
@@ -29,13 +29,13 @@ def binaryDense(inputs, units, activation=None, use_bias=True, trainable=True, b
 			flat_input = binarize(flat_input)
 		w = binarize(w)
 		
-		# adding layer operation -> (w*x + b)
+		# adding layer operation -> (w*x)
 		out = tf.matmul(flat_input, w)
 		if use_bias:
 			b = tf.get_variable('bias', [units], initializer=tf.zeros_initializer(), trainable=trainable)
 			out = tf.nn.bias_add(out, b)
 		
-		# applying activation function
+		# applying activation function desiderd
 		if activation:
 			out = activation(out)
 		
@@ -96,9 +96,9 @@ def binaryConv2d(inputs, filters, kernel_size, strides, padding="VALID", use_bia
 def ap2(x):
 	return tf.sign(x) * tf.pow(2.0, tf.round(tf.log(tf.abs(x)) / tf.log(2.0)))
 
-	
 
-	
+
+
 
 ##################################################################################################
 ############################################ NOTE ################################################
@@ -115,7 +115,7 @@ def ap2(x):
 ##################################################################################################
  
 # Shift based Batch Normalizing Transform, applied to activation (x) over a mini-batch,
-#as described in http://arxiv.org/abs/1502.03167
+# as described in http://arxiv.org/abs/1502.03167
 def shift_batch_norm(x, training=True, momentum=0.99, epsilon=1e-8, reuse=False, name="batch_norm"):
 	
 	xshape = x.get_shape()[1:]

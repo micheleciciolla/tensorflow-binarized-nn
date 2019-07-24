@@ -5,7 +5,7 @@ from tensorflow.python.ops import state_ops
 from tensorflow.python.framework import ops
 from tensorflow.python.training import optimizer
 
-import layers
+import michele_binNN.layers as layers
 
 ap2 = layers.ap2
 
@@ -25,7 +25,7 @@ class ShiftBasedAdaMaxOptimizer(optimizer.Optimizer):
 		self._beta2_t = None
 		self._eps_t = None
 
-	
+	# Create all needed tensors before applying gradients.
 	def _prepare(self):
 		self._lr_t = ops.convert_to_tensor(self.lr, name="learning_rate")
 		self._beta1_t = ops.convert_to_tensor(self.beta1, name="beta1")
