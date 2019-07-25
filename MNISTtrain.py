@@ -2,6 +2,8 @@ import tensorflow as tf
 import numpy as np
 import math
 import time
+import datetime
+now = datetime.datetime.now()
 import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -38,10 +40,10 @@ MODELDIR = './models/'
 LOGDIR = './logs/'
 
 # Number of epochs performed during training
-EPOCHS = 10
+EPOCHS = 20
 
 # Dimension of the training batch
-BATCH_SIZE = 50
+BATCH_SIZE = 100
 
 # Starting optimizer learning rate value
 STEPSIZE = 1e-3
@@ -49,10 +51,14 @@ STEPSIZE = 1e-3
 # Toggle th use of shift based AdaMax instead of vanilla Adam optimizer
 SHIFT_OPT = False # if true use AdaMax
 
-# DOWNLOADING DATA SESSION in folders
-timestamp = int(time.time())
+# CREATING AND DOWNLOADING DATA SESSION in folders
+
+# timestamp = int(time.time()) # qua deve esserci data e ora
+timestamp = now.strftime("%Y-%m-%d %H:%M")
+
 model_name = ''.join([str(timestamp), '_', NETWORK, '_', DATASET])
 session_logdir = os.path.join(LOGDIR, model_name)
+
 train_logdir = os.path.join(session_logdir, 'train')
 test_logdir = os.path.join(session_logdir, 'test')
 session_modeldir = os.path.join(MODELDIR, model_name)
@@ -93,6 +99,7 @@ test_initialization = data_iterator.make_initializer(test_data)
 is_training = tf.get_variable('is_training', initializer=tf.constant(False, tf.bool))
 switch_training_inference = tf.assign(is_training, tf.logical_not(is_training))
 
+# in this line you understand if using binary MLP or binShifted MLP
 xnet, ynet = networks.get_network(NETWORK, DATASET, features, training=is_training)
 
 with tf.name_scope('trainer_optimizer'):
@@ -139,6 +146,7 @@ NUM_BATCHES_TEST = math.ceil(x_test.shape[0] / BATCH_SIZE)
 
 
 #Plot settings
+
 set_training_loss = []
 set_training_acc = []
 set_test_loss = []
@@ -213,17 +221,29 @@ with tf.Session() as sess:
 		set_test_acc.append(val_acc)
 		#-------------------------------------------------
 
-		''' da finire
-		plt.plot(epoch_set, y=[set_training_loss,set_training_acc], 'o', label='MLP Training phase')
-		plt.ylabel('cost')
-		plt.xlabel('epoch')
-		plt.legend()
-		plt.show()
-		'''
+		train_writer.close()
+		test_writer.close()
 
-	train_writer.close()
-	test_writer.close()
-	
-	saver.save(sess, os.path.join(session_modeldir, 'model.ckpt'))
+		saver.save(sess, os.path.join(session_modeldir, 'model.ckpt'))
+
+	plt.figure(1)
+	# figure 1.1 is about loss variance in time for training and test
+	plt.subplot(211)
+	plt.plot(epoch_set, set_training_loss, 'b', label = 'trainig')
+	plt.plot(epoch_set, set_test_loss, 'r', label='test')
+	plt.legend()
+	plt.xlabel('epochs')
+	plt.ylabel('LOSS')
+
+	# figure 1.2 is about accuracy variance in time for training and test
+	plt.subplot(212)
+	plt.plot(epoch_set, set_training_acc, 'b', label='training')
+	plt.plot(epoch_set, set_test_acc, 'r', label='test')
+	plt.legend()
+	plt.xlabel('epochs')
+	plt.ylabel('ACCURACY')
+
+	plt.show()
+
 
 print('\nTraining completed!\nNetwork model is saved in  {}\nTraining logs are saved in {}'.format(session_modeldir, session_logdir))
