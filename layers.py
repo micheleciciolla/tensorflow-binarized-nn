@@ -4,14 +4,16 @@ from tensorflow.python.framework import ops
 
 def binarize(x):
 
-	# we also have to reassign the sign gradient otherwise it will be almost everywhere equal to zero
-	# using the straight through estimator
+	# the sign gradient is everywhere equal to zero
+	# shifting sign + e^-8
 
 	with tf.get_default_graph().gradient_override_map({'Sign': 'Identity'}):
 		return tf.sign(tf.sign(x)+1e-8)
 
 # Fully connected binarized Neural Network
-def binaryDense(inputs, units, activation=None, use_bias=False, trainable=True, binarize_input=True, name='binarydense', reuse=False):
+def binaryDense(inputs, units, activation=None,
+				use_bias=False, trainable=True, binarize_input=True,
+				name='binarydense', reuse=False):
 	
 	# flatten the input 
 	flat_input = tf.contrib.layers.flatten(inputs)
@@ -20,8 +22,14 @@ def binaryDense(inputs, units, activation=None, use_bias=False, trainable=True, 
 	in_units = flat_input.get_shape().as_list()[1]
 	
 	with tf.variable_scope(name, reuse=reuse):
+
 		# getting layer weights and add clip operation (between -1, 1)
-		w = tf.get_variable('weight', [in_units, units], initializer=tf.contrib.layers.xavier_initializer(), trainable=trainable)
+
+		# xavier initializer : This initializer is designed to keep the scale of the gradients roughly the same in all layers
+		xavier = tf.contrib.layers.xavier_initializer()
+		random = tf.initializers.random_uniform()
+
+		w = tf.get_variable('weight', [in_units, units], initializer=xavier, trainable=trainable)
 		w = tf.clip_by_value(w, -1, 1)
 
 		# binarize input and weights of the layer
@@ -31,10 +39,7 @@ def binaryDense(inputs, units, activation=None, use_bias=False, trainable=True, 
 		
 		# adding layer operation -> (w*x)
 		out = tf.matmul(flat_input, w)
-		if use_bias:
-			b = tf.get_variable('bias', [units], initializer=tf.zeros_initializer(), trainable=trainable)
-			out = tf.nn.bias_add(out, b)
-		
+
 		# applying activation function desiderd
 		if activation:
 			out = activation(out)
@@ -44,9 +49,21 @@ def binaryDense(inputs, units, activation=None, use_bias=False, trainable=True, 
 		return out
 
 
+def binaryConv2d(inputs, filters, kernel_size, strides,
+				 padding="VALID", use_bias=True,activation=None, binarize_input=True,
+				 trainable=True, reuse=False, use_cudnn_on_gpu=True, data_format='NHWC',
+				dilations=[1,1,1,1],
+				name='binaryconv2d'):
 
-def binaryConv2d(inputs, filters, kernel_size, strides, padding="VALID", use_bias=True, activation=None, binarize_input=True, trainable=True, 
-					reuse=False, use_cudnn_on_gpu=True, data_format='NHWC', dilations=[1,1,1,1], name='binaryconv2d'):
+	'''
+	data_format: 	An optional `string` from: `"NHWC", "NCHW"`.
+				  	Defaults to `"NHWC"`.
+				  	Specify the data format of the input and output data. With the
+				  	default format "NHWC", the data is stored in the order of:
+					[batch, height, width, channels].
+				  	Alternatively, the format could be "NCHW", the data storage order of:
+					[batch, channels, height, width].
+	'''
 	
 	assert len(strides) == 2
 	assert data_format in ['NHWC', 'NCHW']
@@ -96,10 +113,6 @@ def binaryConv2d(inputs, filters, kernel_size, strides, padding="VALID", use_bia
 def ap2(x):
 	return tf.sign(x) * tf.pow(2.0, tf.round(tf.log(tf.abs(x)) / tf.log(2.0)))
 
-
-
-
-
 ##################################################################################################
 ############################################ NOTE ################################################
 ##################################################################################################
@@ -117,12 +130,11 @@ def ap2(x):
 # Shift based Batch Normalizing Transform, applied to activation (x) over a mini-batch,
 # as described in http://arxiv.org/abs/1502.03167
 def shift_batch_norm(x, training=True, momentum=0.99, epsilon=1e-8, reuse=False, name="batch_norm"):
-	
 	xshape = x.get_shape()[1:]
-	
+
 	with tf.variable_scope(name, reuse=reuse):
 		gamma = tf.get_variable('gamma', xshape, initializer=tf.ones_initializer, trainable=True)
-		beta  = tf.get_variable('beta', xshape, initializer=tf.zeros_initializer, trainable=True)
+		beta = tf.get_variable('beta', xshape, initializer=tf.zeros_initializer, trainable=True)
 		
 		mov_avg = tf.get_variable('mov_avg', xshape, initializer=tf.zeros_initializer, trainable=False)
 		mov_var = tf.get_variable('mov_std', xshape, initializer=tf.ones_initializer, trainable=False)

@@ -11,15 +11,22 @@ ap2 = layers.ap2
 
 class ShiftBasedAdaMaxOptimizer(optimizer.Optimizer):
 	
-	def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8,
-					use_locking=False, name="ShiftBasedAdaMax"):
+	def __init__(self,
+				 learning_rate=0.001,
+				 beta1=0.9,
+				 beta2=0.999,
+				 epsilon=1e-8,
+				use_locking=False,
+				 name="ShiftBasedAdaMax"):
+
 		super(ShiftBasedAdaMaxOptimizer, self).__init__(use_locking, name)
 		
 		self.lr = learning_rate
-		self.beta1 = beta1
-		self.beta2 = beta2
-		self.epsilon = epsilon
-		
+		self.beta1 = beta1 # betas of adam opt
+		self.beta2 = beta2 #  betas of adam opt
+		self.epsilon = epsilon  # Is a very small number to prevent any division by zero in the implementation
+
+		# updated params of SB_adamax
 		self._lr_t = None
 		self._beta1_t = None
 		self._beta2_t = None
@@ -27,6 +34,7 @@ class ShiftBasedAdaMaxOptimizer(optimizer.Optimizer):
 
 	# Create all needed tensors before applying gradients.
 	def _prepare(self):
+		# used to create tensors
 		self._lr_t = ops.convert_to_tensor(self.lr, name="learning_rate")
 		self._beta1_t = ops.convert_to_tensor(self.beta1, name="beta1")
 		self._beta2_t = ops.convert_to_tensor(self.beta2, name="beta2")
@@ -59,30 +67,46 @@ class ShiftBasedAdaMaxOptimizer(optimizer.Optimizer):
 		beta1 = math_ops.cast(self._beta1_t, grad.dtype.base_dtype)
 		beta2 = math_ops.cast(self._beta2_t, grad.dtype.base_dtype)
 		eps = math_ops.cast(self._eps_t, grad.dtype.base_dtype)
-		
-		v_t = v.assign(beta1 * v + (1. - beta1) * grad)
+
+		# FIRST TWO OPERATIONS on momentum
 		m_t = m.assign(tf.maximum(beta2 * m + eps, tf.abs(grad)))
-		
+		v_t = v.assign(beta1 * v + (1. - beta1) * grad)
+
 		# here we apply the shift on the learning rate and on m moment. Since the shift operation
 		# is defined for integer values only, we compute them as the approximate power of two
 		# of the original operations (lr/(1-beta1^t)) and (v_t / m_t). With dedicated hardware
 		# these operations would have been done just by using shift ops.
+
 		lr_c = ap2(lr / (1 - beta1_power))
 		g_t = v_t / ap2(m_t)
-		
+
+		# UPDATES OF VARIABLES
 		var_update = state_ops.assign_sub(var, lr_c * g_t)
 		return control_flow_ops.group(*[var_update, m_t, v_t])
 		
 		
 	def _apply_sparse(self, grad, var):
+		# override base method, so it's out particular case
 		raise NotImplementedError("Sparse gradient updates are not supported.")
-	
-	
+
+
 	def _finish(self, update_ops, name_scope):
+		'''
+		This is called with the `name_scope` using the "name" that
+    	users have chosen for the application of gradients.
+
+		Args:
+     	update_ops: List of `Operation` objects to update variables.  This list
+        contains the values returned by the `_apply_dense()` and
+        `_apply_sparse()` calls.
+     	name_scope: String.  Name to use for the returned operation.
+
+    	Returns:
+      	The operation to apply updates.
+		'''
 		# Update the power accumulator.
 		with ops.control_dependencies(update_ops):
 			beta1_power = self._get_beta_accumulator()
 			with ops.colocate_with(beta1_power):
 				update_beta1 = beta1_power.assign(beta1_power * self._beta1_t, use_locking=self._use_locking)
 		return control_flow_ops.group(*update_ops + [update_beta1], name=name_scope)
-		
