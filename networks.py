@@ -143,7 +143,6 @@ def binary_cifar10_sbn(input, training=True):
 	
 	return input, output
 
-	
 def get_network(type, dataset, *args, **kargs):
 
 	if dataset == 'mnist':

@@ -9,10 +9,11 @@ import michele_binNN.optimizers as optimizers
 import michele_binNN.input_data as input_data
 import matplotlib.pyplot as plt
 
+'''
 
-##############################
-### WE ARE TRAINING MINST  ###
-##############################
+MNIST TRAINING
+
+'''
 
 def load_mnist():
     mnist = input_data.read_data_sets('dataset/MNIST_data', one_hot=False)
@@ -24,33 +25,31 @@ def load_mnist():
     #      x_train, y_train, x_test, y_test, num_classes
     return x_train, y_train, x_test, y_test, 10
 
-
+''' ---------------- PARAMETERS OF THE NETWORK ----------------------'''
 # Type of network to be used: 2 choices
-NETWORK = 'binary'
-# NETWORK = 'binary_sbn'
+# NETWORK = 'binary'
+NETWORK = 'binary_sbn'
 
 # Dataset to be used for the learning task
 DATASET = 'mnist'
-
 # path where to save networks weights
 MODELDIR = './models/'
-
 # folder for tensorboard logs
 LOGDIR = './logs/'
 
 # Number of epochs performed during training
-EPOCHS = 5
+EPOCHS = 10
 # Dimension of the training batch
 BATCH_SIZE = 100
-
 # Starting optimizer learning rate value
 STEPSIZE = 1e-3
 
 # Toggle th use of shift based AdaMax instead of vanilla Adam optimizer
-SHIFT_OPT = False  # if true use AdaMax
+SHIFT_OPT = True  # if true use AdaMax
+''' ---------------------------------------------------------------'''
 
+# creating directory and files for saving model
 timestamp = now.strftime("%Y-%m-%d %H:%M")
-
 model_name = ''.join([str(timestamp), '_', NETWORK, '_', DATASET])
 session_logdir = os.path.join(LOGDIR, model_name)
 train_logdir = os.path.join(session_logdir, 'train')
@@ -71,33 +70,46 @@ batch_size = tf.placeholder(tf.int64)
 data_features, data_labels = tf.placeholder(tf.float32, (None,) + x_train.shape[1:]), tf.placeholder(tf.int32, (
 None,) + y_train.shape[1:])
 
+# preparing training data from dataset
 train_data = tf.data.Dataset.from_tensor_slices((data_features, data_labels))
 train_data = train_data.repeat().shuffle(x_train.shape[0]).batch(batch_size)
-
+# preparing test data from dataset
 test_data = tf.data.Dataset.from_tensor_slices((data_features, data_labels))
 test_data = test_data.repeat().shuffle(x_test.shape[0]).batch(batch_size)
 
+# create an object iterator over selected data structure
 data_iterator = tf.data.Iterator.from_structure(train_data.output_types, train_data.output_shapes)
 
+# function to get next features and labels from dataset
 features, labels = data_iterator.get_next()
 train_initialization = data_iterator.make_initializer(train_data)
+
 test_initialization = data_iterator.make_initializer(test_data)
 
-# network initialization
+# network initialization at training state = TRUE
 is_training = tf.get_variable('is_training', initializer=tf.constant(True, tf.bool))
+# function to switch training state to false = test
 switch_training_inference = tf.assign(is_training, tf.logical_not(is_training))
 
+# HERE WE CREATE THE NETWORK ACCORDING TO INPUTS
 xnet, ynet = networks.get_network(NETWORK, DATASET, features, training=is_training)
 
+
 with tf.name_scope('trainer_optimizer'):
+
     learning_rate = tf.Variable(STEPSIZE, name='learning_rate')
     learning_rate_decay = tf.placeholder(tf.float32, shape=(), name='lr_decay')
     update_learning_rate = tf.assign(learning_rate, learning_rate * learning_rate_decay)
 
+    # optimizer costructor
     opt_constructor = optimizers.ShiftBasedAdaMaxOptimizer if SHIFT_OPT else tf.train.AdamOptimizer
     optimizer = opt_constructor(learning_rate=learning_rate)
+    # computes softmax cross entropy between labels and logits
+    # we use sparse cause our dataset is not ONE HOT labelled
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=ynet, labels=labels)
+    # compute accuracy of classification
     loss = tf.reduce_mean(cross_entropy)
+
 
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
@@ -107,6 +119,8 @@ with tf.name_scope('trainer_optimizer'):
 # metrics definition
 with tf.variable_scope('metrics'):
     mloss, mloss_update = tf.metrics.mean(cross_entropy)
+
+    # tf.metrics.accuracy calculates how often predictions matches labels based on two local variables
     accuracy, acc_update = tf.metrics.accuracy(labels, tf.argmax(ynet, axis=1))
 
     metrics = [mloss, accuracy]
@@ -133,7 +147,10 @@ set_training_loss = []
 set_training_acc = []
 epoch_set = []
 
+# now we start the session
 with tf.Session() as sess:
+    start = now.strftime("%Y-%m-%d %H:%M")
+    print(start)
     # tensorboard summary writer
     train_writer = tf.summary.FileWriter(train_logdir, sess.graph)
     test_writer = tf.summary.FileWriter(test_logdir)
@@ -144,44 +161,46 @@ with tf.Session() as sess:
 
         print("\nEPOCH %d/%d" % (epoch + 1, EPOCHS))
 
-        # exponential learning rate decay
+        # exponential learning rate decay update
         sess.run(update_learning_rate, feed_dict={learning_rate_decay: math.pow(0.91, epoch)})
 
-        # initialize training dataset and set batch normalization training
+        # initialize training and set batch normalization training
         sess.run(train_initialization, feed_dict={data_features: x_train, data_labels: y_train, batch_size: BATCH_SIZE})
+        # metrics are used to computed all infos needed
         sess.run(metrics_initializer)
         # sess.run(switch_training_inference)
 
         print("is training? ", sess.run(is_training))
 
         # Training of the network
-        print("TRAINING ")
-        for nb in tqdm(range(NUM_BATCHES_TRAIN)):
+        for current_batch in tqdm(range(NUM_BATCHES_TRAIN)):
             sess.run(train_op)  # train network on a single batch
             batch_trn_loss, _ = sess.run(metrics_update)
+            # here we get loss and accuracy via metrics measures
             training_loss, training_accuracy = sess.run(metrics)
 
         print()
         print("Training loss: ", round(training_loss, 3), " Training accuracy: ", round(training_accuracy, 3))
         print("------------------------------------------------------------")
 
+        # add to models
         summary = sess.run(merged_summary)
         train_writer.add_summary(summary, epoch)
 
         if EPOCHS-epoch-1 == 0:
             # test is at last epoch
-            print("test START")
+            print("test STARTS")
             # initialize the test dataset and set batc normalization inference
             sess.run(test_initialization, feed_dict={data_features: x_test, data_labels: y_test, batch_size: BATCH_SIZE})
             sess.run(metrics_initializer)
 
-            sess.run(switch_training_inference) # changes is_training=false
+            sess.run(switch_training_inference) # changes is_training = false
             print("is training? ",sess.run(is_training))
 
-
             # evaluation of the network
-            for nb in tqdm(range(NUM_BATCHES_TEST)):
+            for current_batch in tqdm(range(NUM_BATCHES_TEST)):
                 sess.run([loss, metrics_update])
+                # compute loss and test accuracy
                 test_loss, test_accuracy = sess.run(metrics)
 
             print()
@@ -191,17 +210,16 @@ with tf.Session() as sess:
             summary = sess.run(merged_summary)
             test_writer.add_summary(summary, epoch)
 
-        # -------------------------------------------------
-        # inserisco nel grafico
+        # -------  inserisco nel grafico  ----------------
         epoch_set.append(epoch + 1)
         set_training_loss.append(training_loss)
         set_training_acc.append(training_accuracy)
-
-    # -------------------------------------------------
+        # -------------------------------------------------
 
     train_writer.close()
     test_writer.close()
 
+    # save model at the end of operations
     saver.save(sess, os.path.join(session_modeldir, 'model.ckpt'))
 
     plt.figure(1)
@@ -220,7 +238,7 @@ with tf.Session() as sess:
     plt.ylabel('ACCURACY')
 
     plt.show()
+    end = now.strftime("%Y-%m-%d %H:%M")
 
-print('\nTraining completed!\nNetwork model is saved in  {}\nTraining logs are saved in {}'.format(session_modeldir,
-                                                                                                   session_logdir))
-print("ended :", now.strftime("%Y-%m-%d %H:%M"))
+print('\nTraining completed!\nNetwork model is saved in  {}\nTraining logs are saved in {}'.format(session_modeldir,session_logdir))
+print("Ended :", end)
