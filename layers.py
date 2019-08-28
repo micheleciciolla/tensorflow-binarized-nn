@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.python.framework import ops
+# updated 25 August
 
 def binarize(x):
 

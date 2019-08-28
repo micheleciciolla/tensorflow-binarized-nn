@@ -1,3 +1,7 @@
+__author__ = "Michele Ciciolla"
+# updated 25 August
+
+
 import tensorflow as tf
 import michele_binNN.networks as networks
 import math
@@ -27,8 +31,8 @@ def load_mnist():
 
 ''' ---------------- PARAMETERS OF THE NETWORK ----------------------'''
 # Type of network to be used: 2 choices
-# NETWORK = 'binary'
-NETWORK = 'binary_sbn'
+NETWORK = 'binary'
+# NETWORK = 'binary_sbn'
 
 # Dataset to be used for the learning task
 DATASET = 'mnist'
@@ -38,19 +42,21 @@ MODELDIR = './models/'
 LOGDIR = './logs/'
 
 # Number of epochs performed during training
-EPOCHS = 10
+EPOCHS = 20
 # Dimension of the training batch
 BATCH_SIZE = 100
 # Starting optimizer learning rate value
 STEPSIZE = 1e-3
 
 # Toggle th use of shift based AdaMax instead of vanilla Adam optimizer
-SHIFT_OPT = True  # if true use AdaMax
+SHIFT_OPT = False  # if true use AdaMax
 ''' ---------------------------------------------------------------'''
 
 # creating directory and files for saving model
-timestamp = now.strftime("%Y-%m-%d %H:%M")
-model_name = ''.join([str(timestamp), '_', NETWORK, '_', DATASET])
+timestamp = now.strftime("%m-%d %H:%M")
+time = now.strftime("%H-%M")
+date = datetime.date.today()
+model_name = ''.join([str(date), '_', NETWORK, '_', DATASET, '_', str(time)])
 session_logdir = os.path.join(LOGDIR, model_name)
 train_logdir = os.path.join(session_logdir, 'train')
 test_logdir = os.path.join(session_logdir, 'test')
@@ -99,6 +105,7 @@ with tf.name_scope('trainer_optimizer'):
 
     learning_rate = tf.Variable(STEPSIZE, name='learning_rate')
     learning_rate_decay = tf.placeholder(tf.float32, shape=(), name='lr_decay')
+
     update_learning_rate = tf.assign(learning_rate, learning_rate * learning_rate_decay)
 
     # optimizer costructor
@@ -149,8 +156,8 @@ epoch_set = []
 
 # now we start the session
 with tf.Session() as sess:
-    start = now.strftime("%Y-%m-%d %H:%M")
-    print(start)
+    print(now.strftime("%Y-%m-%d %H:%M"))
+
     # tensorboard summary writer
     train_writer = tf.summary.FileWriter(train_logdir, sess.graph)
     test_writer = tf.summary.FileWriter(test_logdir)
@@ -166,6 +173,7 @@ with tf.Session() as sess:
 
         # initialize training and set batch normalization training
         sess.run(train_initialization, feed_dict={data_features: x_train, data_labels: y_train, batch_size: BATCH_SIZE})
+
         # metrics are used to computed all infos needed
         sess.run(metrics_initializer)
         # sess.run(switch_training_inference)
@@ -179,7 +187,7 @@ with tf.Session() as sess:
             # here we get loss and accuracy via metrics measures
             training_loss, training_accuracy = sess.run(metrics)
 
-        print()
+        print("")
         print("Training loss: ", round(training_loss, 3), " Training accuracy: ", round(training_accuracy, 3))
         print("------------------------------------------------------------")
 
@@ -203,7 +211,7 @@ with tf.Session() as sess:
                 # compute loss and test accuracy
                 test_loss, test_accuracy = sess.run(metrics)
 
-            print()
+            print("")
             print("Test loss: ", round(test_loss, 3), " Test accuracy: ", round(test_accuracy, 3))
             print("------------------------------------------------------------")
 
@@ -238,7 +246,8 @@ with tf.Session() as sess:
     plt.ylabel('ACCURACY')
 
     plt.show()
-    end = now.strftime("%Y-%m-%d %H:%M")
+    end = now.strftime("%m-%d %H:%M")
 
 print('\nTraining completed!\nNetwork model is saved in  {}\nTraining logs are saved in {}'.format(session_modeldir,session_logdir))
 print("Ended :", end)
+print('\nOpen TensorBoard by tiping :\ntensorboard --logdir=logs/')

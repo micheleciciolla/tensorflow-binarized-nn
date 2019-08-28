@@ -1,7 +1,7 @@
 import tensorflow as tf
 import michele_binNN.layers as layers
 
-# updated 25 luglio
+# updated 25 August
 
 def binary_mnist(input, training=True):
 
@@ -41,106 +41,197 @@ def binary_mnist_sbn(input, training=True):
 	output = layers.shift_batch_norm(fc4, training=training, name="batch_norm4")
 
 	return input, output
-	
-def cifar10(input, training=True):
-	out = tf.layers.conv2d(input, 128, [3,3], [1,1], padding='VALID', use_bias=False, name='c_conv2d_1')
+
+
+# CREAZIONE DELLE 4 RETI (2+2)
+# GET NETWORK PER TRAINING
+
+# ---CIFAR 10---# (A)
+
+# NB per cifar avremo CONVOLUTIONAL NEURAL NETWORK
+
+# BNN with SIGN FUNCTION
+# original batch normalization and vanilla adam
+
+def binary_cifar10(input, training=True):
+	out = layers.binaryConv2d(input, 128, [3, 3], [1, 1], padding='VALID', binarize_input=False, name='bc_conv2d_1')
 	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.nn.relu(out)
-	out = tf.layers.conv2d(out, 128, [3,3], [1,1], padding='SAME', use_bias=False, name='conv2d_1')
-	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 128, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_1')
+	out = tf.layers.max_pooling2d(out, [2, 2], [2, 2])
 	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.nn.relu(out)
-	out = tf.layers.conv2d(out, 256, [3,3], [1,1], padding='SAME', use_bias=False, name='conv2d_2')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 256, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_2')
 	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.nn.relu(out)
-	out = tf.layers.conv2d(out, 256, [3,3], [1,1], padding='SAME', use_bias=False, name='conv2d_3')
-	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 256, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_3')
+	out = tf.layers.max_pooling2d(out, [2, 2], [2, 2])
 	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.nn.relu(out)
-	out = tf.layers.conv2d(out, 512, [3,3], [1,1], padding='SAME', use_bias=False, name='conv2d_4')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 512, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_4')
 	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.nn.relu(out)
-	out = tf.layers.conv2d(out, 512, [3,3], [1,1], padding='SAME', use_bias=False, name='conv2d_5')
-	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 512, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_5')
+	out = tf.layers.max_pooling2d(out, [2, 2], [2, 2])
 	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.nn.relu(out)
-	out = tf.layers.flatten(out)
-	out = tf.layers.dense(out, 1024, use_bias=False, name='dense_1')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 1024,activation=None, name='binary_dense_1')
 	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.nn.relu(out)
-	out = tf.layers.dense(out, 1024, use_bias=False, name='dense_2')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 1024,activation=None, name='binary_dense_2')
 	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.nn.relu(out)
-	out = tf.layers.dense(out, 10, name='dense_3')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 10,activation=None, name='binary_dense_3')
 	output = tf.layers.batch_normalization(out, training=training)
+
 	return input, output
 
-	
-def binary_cifar10(input, training=True):
-	out = layers.binaryConv2d(input, 128, [3,3], [1,1], padding='VALID', use_bias=False, binarize_input=False, name='bc_conv2d_1')
-	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 128, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_1')
-	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
-	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 256, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_2')
-	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 256, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_3')
-	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
-	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 512, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_4')
-	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 512, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_5')
-	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
-	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryDense(out, 1024, use_bias=False, name='binary_dense_1')
-	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryDense(out, 1024, use_bias=False, name='binary_dense_2')
-	out = tf.layers.batch_normalization(out, training=training)
-	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryDense(out, 10, name='binary_dense_3')
-	output = tf.layers.batch_normalization(out, training=training)
-	
-	return input, output
-	
+
+# BNN with SIGN FUNCTION
+# shift based batch normalization ---> spatial_shift_batch_norm quando è ancora conv2d, poi diventa shift_batch_norm
+# shift based adam opt.
 
 def binary_cifar10_sbn(input, training=True):
-	out = layers.binaryConv2d(input, 128, [3,3], [1,1], padding='VALID', use_bias=False, binarize_input=False, name='bc_conv2d_1')
+	out = layers.binaryConv2d(input, 128, [3, 3], [1, 1], padding='VALID', binarize_input=False, name='bc_conv2d_1')
 	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_1')
 	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 128, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_1')
+
+	out = layers.binaryConv2d(out, 128, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_1')
+	out = tf.layers.max_pooling2d(out, [2, 2], [2, 2])
+	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_2')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 256, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_2')
+	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_3')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 256, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_3')
+	out = tf.layers.max_pooling2d(out, [2, 2], [2, 2])
+	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_4')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 512, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_4')
+	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_5')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 512, [3, 3], [1, 1], padding='SAME', name='bnn_conv2d_5')
+	out = tf.layers.max_pooling2d(out, [2, 2], [2, 2])
+	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_6')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 1024, name='binary_dense_1')
+	out = layers.shift_batch_norm(out, training=training, name='shift_batch_norm_7')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 1024, name='binary_dense_2')
+	out = layers.shift_batch_norm(out, training=training, name='shift_batch_norm_8')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 10, name='binary_dense_3')
+	output = layers.shift_batch_norm(out, training=training, name='shift_batch_norm_9')
+
+	return input, output# CREAZIONE DELLE 4 RETI (2+2)
+# GET NETWORK PER TRAINING
+
+#---CIFAR 10---# (A)
+
+# NB per cifar avremo CONVOLUTIONAL NEURAL NETWORK
+
+# BNN with SIGN FUNCTION
+# original batch normalization and vanilla adam
+
+def binary_cifar10(input, training=True):
+	out = layers.binaryConv2d(input, 128, [3,3], [1,1], padding='VALID', binarize_input=False, name='bc_conv2d_1')
+	out = tf.layers.batch_normalization(out, training=training)
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 128, [3,3], [1,1], padding='SAME',  name='bnn_conv2d_1')
+	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
+	out = tf.layers.batch_normalization(out, training=training)
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 256, [3,3], [1,1], padding='SAME', name='bnn_conv2d_2')
+	out = tf.layers.batch_normalization(out, training=training)
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 256, [3,3], [1,1], padding='SAME',  name='bnn_conv2d_3')
+	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
+	out = tf.layers.batch_normalization(out, training=training)
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 512, [3,3], [1,1], padding='SAME',  name='bnn_conv2d_4')
+	out = tf.layers.batch_normalization(out, training=training)
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 512, [3,3], [1,1], padding='SAME',  name='bnn_conv2d_5')
+	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
+	out = tf.layers.batch_normalization(out, training=training)
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 1024,activation=None,  name='binary_dense_1')
+	out = tf.layers.batch_normalization(out, training=training)
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 1024, activation=None, name='binary_dense_2')
+	out = tf.layers.batch_normalization(out, training=training)
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryDense(out, 10,activation=None, name='binary_dense_3')
+	output = tf.layers.batch_normalization(out, training=training)
+
+	return input, output
+
+# BNN with SIGN FUNCTION
+# shift based batch normalization ---> spatial_shift_batch_norm quando è ancora conv2d, poi diventa shift_batch_norm
+# shift based adam opt.
+
+def binary_cifar10_sbn(input, training=True):
+	out = layers.binaryConv2d(input, 128, [3,3], [1,1], padding='VALID',  binarize_input=False, name='bc_conv2d_1')
+	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_1')
+	out = tf.clip_by_value(out, -1, 1)
+
+	out = layers.binaryConv2d(out, 128, [3,3], [1,1], padding='SAME',  name='bnn_conv2d_1')
 	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
 	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_2')
 	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 256, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_2')
+
+	out = layers.binaryConv2d(out, 256, [3,3], [1,1], padding='SAME',  name='bnn_conv2d_2')
 	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_3')
 	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 256, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_3')
+
+	out = layers.binaryConv2d(out, 256, [3,3], [1,1], padding='SAME',  name='bnn_conv2d_3')
 	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
 	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_4')
 	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 512, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_4')
+
+	out = layers.binaryConv2d(out, 512, [3,3], [1,1], padding='SAME', name='bnn_conv2d_4')
 	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_5')
 	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryConv2d(out, 512, [3,3], [1,1], padding='SAME', use_bias=False, name='bnn_conv2d_5')
+
+	out = layers.binaryConv2d(out, 512, [3,3], [1,1], padding='SAME', name='bnn_conv2d_5')
 	out = tf.layers.max_pooling2d(out, [2,2], [2,2])
 	out = layers.spatial_shift_batch_norm(out, training=training, name='shift_batch_norm_6')
 	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryDense(out, 1024, use_bias=False, name='binary_dense_1')
+
+	out = layers.binaryDense(out, 1024,  name='binary_dense_1')
 	out = layers.shift_batch_norm(out, training=training, name='shift_batch_norm_7')
 	out = tf.clip_by_value(out, -1, 1)
-	out = layers.binaryDense(out, 1024, use_bias=False, name='binary_dense_2')
+
+	out = layers.binaryDense(out, 1024, name='binary_dense_2')
 	out = layers.shift_batch_norm(out, training=training, name='shift_batch_norm_8')
 	out = tf.clip_by_value(out, -1, 1)
+
 	out = layers.binaryDense(out, 10, name='binary_dense_3')
 	output = layers.shift_batch_norm(out, training=training, name='shift_batch_norm_9')
-	
+
 	return input, output
 
 def get_network(type, dataset, *args, **kargs):
