@@ -3,14 +3,14 @@ __author__ = "Michele Ciciolla"
 
 
 import tensorflow as tf
-import michele_binNN.networks as networks
+import networks
 import math
 import os
 import datetime
 now = datetime.datetime.now()
 from tqdm import tqdm
-import michele_binNN.optimizers as optimizers
-import michele_binNN.input_data as input_data
+import optimizers
+import input_data
 import matplotlib.pyplot as plt
 
 '''
