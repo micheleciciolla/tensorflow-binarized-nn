@@ -1,5 +1,5 @@
 import tensorflow as tf
-import michele_binNN.layers as layers
+import layers
 
 # updated 25 August
 
