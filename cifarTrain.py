@@ -11,8 +11,8 @@ import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-import michele_binNN.networks as networks
-import michele_binNN.optimizers as optimizers
+import networks
+import optimizers
 
 now = datetime.datetime.now()
 ##############################
