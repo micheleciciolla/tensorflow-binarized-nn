@@ -1,3 +1,26 @@
-# binarized-neural-network
-This project was subscribed for Neural Network course (2019 sept) @ Sapienza University (Rome) by Michele Ciciolla, Flavio Lorenzi
-# updated 25 August
+# Binarized Neural Networks
+
+This is an implementation of binarized neural networks using Tensorflow. Based on https://arxiv.org/abs/1602.02830
+
+## Starting Training
+
+It's possible to start training networks on Cifar or MNIST. At the end a plot about performance is printed. 
+### Break down into end to end tests
+
+One can edit parameters inside each script.
+```
+python MNISTtrain.py or python cifarTrain.py
+```
+
+## Built With
+
+* [Visual Studio Code]
+* [Tensorflow]
+* [Python]
+
+## Authors
+
+* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+
+
+
