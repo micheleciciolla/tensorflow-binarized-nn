@@ -20,7 +20,7 @@ python MNISTtrain.py or python cifarTrain.py
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
+* **Michele Ciciolla** 
+* **Flavio Lorenzi** 
 
 
