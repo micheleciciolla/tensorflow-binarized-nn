@@ -7,7 +7,7 @@ from tensorflow.python.ops import state_ops
 from tensorflow.python.framework import ops
 from tensorflow.python.training import optimizer
 
-import michele_binNN.layers as layers
+import layers
 
 ap2 = layers.ap2
 
