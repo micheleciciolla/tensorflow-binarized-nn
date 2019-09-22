@@ -28,7 +28,7 @@ python MNISTtrain.py or python cifarTrain.py
 * Flavio Lorenzi <a href="https://github.com/FlavioLorenzi"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/1024px-Octicons-mark-github.svg.png" width="20"></a>
  
 ## Documentation
-You can read our technical documentation about this project here PDF [DOCUMENTATION](./documentation/report.pdf)
+You can read our technical documentation about this project here PDF [DOCUMENTATION](report.pdf)
 
 ## License
 This project is under MIT license - [LICENSE](./LICENSE)
