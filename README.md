@@ -6,7 +6,12 @@ Final Project for Neural Network course 2018-2019, Università La Sapienza Roma
 
 <a href="https://www.dis.uniroma1.it/"><img src="http://www.dis.uniroma1.it/sites/default/files/marchio%20logo%20eng%20jpg.jpg" width="400"></a>
 
-## Starting Training
+## Project status
+```bash
+Completed
+```
+
+## Starting the training
 
 It's possible to start training networks on Cifar or MNIST datasets. At the end a plot about performance is printed. 
 One can edit parameters inside each script.
