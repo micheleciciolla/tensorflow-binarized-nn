@@ -1,4 +1,4 @@
-# Binarized Neural Networks
+# A Binarized Neural Networks implementation
 
 This is an implementation of binarized neural networks using Tensorflow. Based on https://arxiv.org/abs/1602.02830
 
