@@ -1,4 +1,5 @@
 # A Binarized Neural Networks implementation
+![Swagger Validator](https://badgen.net/github/status/micromatch/micromatch/4.0.1)
 
 This is an implementation of binarized neural networks using Tensorflow. Based on https://arxiv.org/abs/1602.02830
 
